@@ -68,7 +68,7 @@ Map={
       local function calcSame(A)		--> 1: if all args are the same (equal) / 0: if not
 	    first=A[1]
 	    for _, curr in ipairs(A) do
-	       if first ~= curr then return 0 end
+	       if first ~= curr then  return 0 end
 	    end
 	    return 1
       end
@@ -76,23 +76,31 @@ Map={
       local function makeNewLine(C)
 	 for _, v in ipairs(C) do
 	    S.NewLines:add (v[1],v[2])
+	   for _,V in pairs(S.NewLines.List) do
+	       if S[V[1]][V[2]]>0 and S[V[1]][V[2]] < 3 then
+		  S[V[1]][V[2]]=S[V[1]][V[2]]+2
+	       end
+	    end
 	 end
       end
       
-      local function calcHit(...)  -- arg: {x1,y1},{x2,y2}..{xn,yn} coordinates of cells --> hits (1/0), Coords: table of {x,y} for every turned into line cell
+      local function calcHit(...)  -- arg: {x1,y1},{x2,y2}..{xn,yn} coordinates of cells --> hits (1/0), Coords: table of {x,y} for every cell turned into line 
 	 Cells, Coords = {},{}
 	 for _, A in ipairs(arg) do					   -- collect all cells content and eliminate incorrect 
 	    if A[1]<1 or A[1]>#S or A[2]<1 or A[2]>#S  then
 	       return 0							   -- cell is out of range
 	    end	  
 	    c = S[A[1]][A[2]]						   -- с = content of the next cell from arg list
-	    if c>2  then return 0 end					   -- cell is already part of some line	    
-	    table.insert(Cells,c)
+	    if A[1]==S.LastMove[1] and  A[2]==S.LastMove[2] then	   -- omit checkin for current move target cells becase there may be line already  
+	       table.insert(Cells,p)	    
+	    else
+	       if c>2 or c==0  then return 0 end				   -- cell is already part of some line	or empty    
+	       table.insert(Cells,c)
+	    end
 	    table.insert(Coords,{A[1],A[2]})
 	 end	 
-	 hit=calcSame(Cells)
-	 if hit>0 then makeNewLine(Coords) end
-	 return hit
+	 makeNewLine(Coords)
+	 return calcSame(Cells)
       end
       
 
@@ -102,19 +110,25 @@ Map={
       
       S.LastMove={x,y}
       S[x][y]=p								   -- place token on Map 
-      hits = calcHit({x-1,y},{x,y},{x+1,y})				   -- calculate hits for horizontal line
-      hits = hits + calcHit({x-1,y+1},{x,y},{x+1,y-1})			    -- left-rightdown diagonal
-      hits = hits + calcHit({x,y+1},{x,y},{x,y-1})			   -- vertical
-      hits = hits + calcHit({x-1,y-1},{x,y},{x+1,y+1})			   -- left-rightup diagonal
+      hits = calcHit({x-1,y},{x,y},{x+1,y})			           -- calculate hits for horizontal line with center on new token
+      hits = hits + calcHit({x-1,y+1},{x,y},{x+1,y-1})			   -- ...left-rightdown diagonal
+      hits = hits + calcHit({x,y+1},{x,y},{x,y-1})			   -- ...vertical
+      hits = hits + calcHit({x-1,y-1},{x,y},{x+1,y+1})			   -- ...left-rightup diagonal
+									   -- I was too lazy to write line coordinates generator function
+      hits = hits + calcHit({x,y},{x+1,y},{x+2,y})			   -- horizontal from token to right
+      hits = hits + calcHit({x,y},{x+1,y+1},{x+2,y+2})			   -- upright diagonal
+      hits = hits + calcHit({x,y},{x+1,y-1},{x+2,y-2})			   -- downright diagonal
+      hits = hits + calcHit({x,y},{x,y-1},{x,y-2})			   -- vertical down
+      hits = hits + calcHit({x,y},{x,y+1},{x,y+2})			   -- vertical up
+      hits = hits + calcHit({x,y},{x-1,y},{x-2,y})			   -- horizintal to left
+      hits = hits + calcHit({x,y},{x-1,y+1},{x-2,y+2})			   -- upleft diagonal
+      hits = hits + calcHit({x,y},{x-1,y-1},{x-2,y-2})			   -- downleft diagonal
 
       return hits
 
    end,
 
    endMove=function(S)
-      for _,V in pairs(S.NewLines.List) do
-	 S[V[1]][V[2]]=S[V[1]][V[2]]+2
-      end
       S.NewLines:clear()
       S.LastMove={}
    end,
@@ -128,16 +142,14 @@ Player1.name="Player #1"
 Player1.name="Player #2"
 Map:init(10)
 Map[5][2]=1
+Map[8][2]=1
 Map[7][2]=1
 Map[6][3]=1
 Map[6][1]=1
 print(Map:makeMove(1,6,2))
-
-
--- MainGame
 Map:draw()
 Map:endMove()
 Map:draw()
--- End
+
 
 
