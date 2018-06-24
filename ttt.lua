@@ -63,67 +63,93 @@ Map={
    end,
    
    --
-   makeMove=function(S,p,x,y)	 -- p:player's token; x,y:coordinates --> hits or nil 
-     
-      local function calcSame(A)		--> 1: if all args are the same (equal) / 0: if not
-	    first=A[1]
-	    for _, curr in ipairs(A) do
-	       if first ~= curr then  return 0 end
+   isOutOfRange = function(S, x,y)
+      if x<1 or x>#S or y<1 or y>#S then return true end
+   end,
+   
+   --
+   makeMove=function(S,p,x,y)	 -- p:player's token; x,y:coordinates --> hits or nil    
+      
+
+      local function makeNewLine(x,y,x2,y2)
+	 
+	 local function calcDelta(v1,v2)
+	    if v1>v2 then return -1
+	    elseif v1<v2 then return 1
+	    else return 0
 	    end
-	    return 1
+	 end
+	 
+	 local function proceedCell(x,y)
+	    if S[x][y]==0 then error("Map.makeMove() -> makeNewLine(): Zero-cell in line!")
+	    elseif S[x][y]<3 then S[x][y]=S[x][y]+2
+	    end
+	    S.NewLines:add (x,y)
+	 end
+
+	 repeat	    
+	    proceedCell(x,y)
+	    x=calcDelta(x,x2)+x
+	    y=calcDelta(y,y2)+y
+	 until x == x2 and y == y2
+	 proceedCell(x,y)
+      end
+      
+
+      
+      function neightborByDirection(x,y, dir)	   --> new x,y for neightbor cell in direction dir from cell x,y   
+	 if dir==1 then y=y+1
+	 elseif dir == 2 then x=x+1; y=y+1 
+	 elseif dir == 3 then x=x+1
+	 elseif dir == 4 then x=x+1; y=y-1
+	 elseif dir == 5 then y=y-1
+	 elseif dir == 6 then y=y-1; x=x-1
+	 elseif dir == 7 then x=x-1
+	 elseif dir == 8 then y=y+1; x=x-1
+	 else return nil
+	 end
+	 return x,y   
       end
 
-      local function makeNewLine(C)
-	 for _, v in ipairs(C) do
-	    S.NewLines:add (v[1],v[2])
-	   for _,V in pairs(S.NewLines.List) do
-	       if S[V[1]][V[2]]>0 and S[V[1]][V[2]] < 3 then
-		  S[V[1]][V[2]]=S[V[1]][V[2]]+2
-	       end
+      function invertDirection(dir)
+	 dir = dir+4
+	 if dir > 8 then dir=dir-8 end
+	 return dir
+      end
+
+      function calcLine(x,y,p,dir)			   --> x,y of last p) token on line in direction dir 
+	 count = 1
+	 while true do
+	    x1,y1 = neightborByDirection(x,y, dir)
+	    if not S:isOutOfRange(x1,y1) and S[x1][y1] == p then
+	       x,y = x1,y1
+	       count=count+1
+	    else break
 	    end
+	 end
+	 return x,y,count
+      end
+
+
+      if S[x][y] ~= 0 or S:isOutOfRange(x,y) then return nil end				   -- it's accepted to only put token on empty field
+      
+      S.LastMove={x,y}
+      S[x][y]=p											   -- place token on Map 
+     
+      local hits=0
+
+      for dir=1, 8 do
+	 local x1,y1,h1=calcLine(x,y,p,dir) 
+	 local x2,y2,h2=calcLine(x,y,p,invertDirection(dir))
+
+	 local h=h1+h2-1
+	 if h >=3 then
+	    --print(" ",h)
+	    makeNewLine(x1,y1,x2,y2)
+	    hits=hits+h-2
 	 end
       end
       
-      local function calcHit(...)  -- arg: {x1,y1},{x2,y2}..{xn,yn} coordinates of cells --> hits (1/0), Coords: table of {x,y} for every cell turned into line 
-	 Cells, Coords = {},{}
-	 for _, A in ipairs(arg) do					   -- collect all cells content and eliminate incorrect 
-	    if A[1]<1 or A[1]>#S or A[2]<1 or A[2]>#S  then
-	       return 0							   -- cell is out of range
-	    end	  
-	    c = S[A[1]][A[2]]						   -- с = content of the next cell from arg list
-	    if A[1]==S.LastMove[1] and  A[2]==S.LastMove[2] then	   -- omit checkin for current move target cells becase there may be line already  
-	       table.insert(Cells,p)	    
-	    else
-	       if c>2 or c==0  then return 0 end				   -- cell is already part of some line	or empty    
-	       table.insert(Cells,c)
-	    end
-	    table.insert(Coords,{A[1],A[2]})
-	 end	 
-	 makeNewLine(Coords)
-	 return calcSame(Cells)
-      end
-      
-
-      if S[x][y] ~= 0 then return nil					   -- it's accepted to only put token on empty field
-      elseif x<1 or x>#S or y<1 or y>#S then return nil			   -- cell is out of Map range
-      end
-      
-      S.LastMove={x,y}
-      S[x][y]=p								   -- place token on Map 
-      hits = calcHit({x-1,y},{x,y},{x+1,y})			           -- calculate hits for horizontal line with center on new token
-      hits = hits + calcHit({x-1,y+1},{x,y},{x+1,y-1})			   -- ...left-rightdown diagonal
-      hits = hits + calcHit({x,y+1},{x,y},{x,y-1})			   -- ...vertical
-      hits = hits + calcHit({x-1,y-1},{x,y},{x+1,y+1})			   -- ...left-rightup diagonal
-									   -- I was too lazy to write line coordinates generator function
-      hits = hits + calcHit({x,y},{x+1,y},{x+2,y})			   -- horizontal from token to right
-      hits = hits + calcHit({x,y},{x+1,y+1},{x+2,y+2})			   -- upright diagonal
-      hits = hits + calcHit({x,y},{x+1,y-1},{x+2,y-2})			   -- downright diagonal
-      hits = hits + calcHit({x,y},{x,y-1},{x,y-2})			   -- vertical down
-      hits = hits + calcHit({x,y},{x,y+1},{x,y+2})			   -- vertical up
-      hits = hits + calcHit({x,y},{x-1,y},{x-2,y})			   -- horizintal to left
-      hits = hits + calcHit({x,y},{x-1,y+1},{x-2,y+2})			   -- upleft diagonal
-      hits = hits + calcHit({x,y},{x-1,y-1},{x-2,y-2})			   -- downleft diagonal
-
       return hits
 
    end,
@@ -146,10 +172,17 @@ Map[8][2]=1
 Map[7][2]=1
 Map[6][3]=1
 Map[6][1]=1
+Map[6][4]=1
+Map[7][3]=1
+Map[5][1]=1
+print()
 print(Map:makeMove(1,6,2))
 Map:draw()
 Map:endMove()
 Map:draw()
+
+  
+
 
 
 
