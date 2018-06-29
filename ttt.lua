@@ -2,14 +2,78 @@
 require "tools"
 os.execute("chcp 65001 >nul")	       -- for MS Windows console 
 
+
 t_Player = {
-   name="",
+   name="Player #1",
    score=0,
-   controller="user"  -- user,AI1,AI2
+   controller=0,  -- 0=user,1=AI1,2=AI2
+   token=1
 }
 
-Player1=createNew(t_Player)
-Player2=createNew(t_Player)
+
+Game = {
+
+   minLine=3,			       -- minimal lenght of cells row with same tokens to become a line
+   --scoresToWin=0,		       -- 0 = no prematurely win
+   mapSize=3,
+
+   --
+   init = function(S)
+      print ("Welcome to the big TicTacToe game. Options is:")
+
+      Player1=createNew(t_Player)
+      Player2=createNew(t_Player)
+      Player2.token=2
+      Player2.name="Player #2"
+   
+      O={
+	 [1]={nam="Map size", curval=Game.mapSize, minval=Game.minLine, maxval=100},
+	 [2]={nam="Player#1 controller(0=Human, 1=AI)", curval=Player1.controller, minval=0, maxval=1},
+	 [3]={nam="Player#2 controller(0=Human, 1=AI)", curval=Player2.controller, minval=0, maxval=1},
+      }
+      getOptions(O)
+      Game.mapSize=O[1].curval
+      Map:init(Game.mapSize)
+      Game.CurrentPlayer=Player1
+      Game.turnsLeft=Game.mapSize
+   
+   end,
+
+   --
+   play = function()
+
+      Map:draw();
+      repeat
+	 if Game.CurrentPlayer.controller == 0 then controller=controllerHuman
+         elseif Game.CurrentPlayer.controller == 1 then controller=controllerUI1
+	 end
+
+	 print(Game.CurrentPlayer.name.." turn.")
+	 repeat
+	    x,y = controller.retMove(Game.CurrentPlayer)
+	    result=Map:makeMove(Game.CurrentPlayer.token,x,y)
+	    if not result then
+		controller.handleError(x,y)
+	    end
+	 until result
+	 
+	 Game.CurrentPlayer.score=Game.CurrentPlayer.score+result
+	 print(Game.CurrentPlayer.name.." moves to "..x..","..y.." and made "..result.." score. Total is "..Game.CurrentPlayer.score)
+	 Map:draw()
+	 Map:endMove()
+
+	 if Game.CurrentPlayer == Player1 then Game.CurrentPlayer = Player2
+	 else Game.CurrentPlayer = Player1
+	 end
+
+	 local R=Map:retHitMovesList(Game.CurrentPlayer.token,3)
+	 print("__",Game.CurrentPlayer.token)
+	 table.dumpRet(R)
+      until table.maxkey(R)==nil
+
+   end,
+
+}
 
 
 Map={
@@ -69,10 +133,8 @@ Map={
    
    --
    makeMove=function(S,p,x,y)	 -- p:player's token; x,y:coordinates --> hits or nil    
-      
 
       local function makeNewLine(x,y,x2,y2)
-	 
 	 local function calcDelta(v1,v2)
 	    if v1>v2 then return -1
 	    elseif v1<v2 then return 1
@@ -95,8 +157,6 @@ Map={
 	 proceedCell(x,y)
       end
       
-
-      
       function neightborByDirection(x,y, dir)	   --> new x,y for neightbor cell in direction dir from cell x,y   
 	 if dir==1 then y=y+1
 	 elseif dir == 2 then x=x+1; y=y+1 
@@ -111,13 +171,13 @@ Map={
 	 return x,y   
       end
 
-      function invertDirection(dir)
+      function invertDirection(dir)		   --> direction opposite to dir
 	 dir = dir+4
 	 if dir > 8 then dir=dir-8 end
 	 return dir
       end
 
-      function calcLine(x,y,p,dir)			   --> x,y of last p) token on line in direction dir 
+      function calcLine(x,y,p,dir)		   --> ~x,y of last p token on line in direction dir, ~lenght of line (at least 1)  
 	 count = 1
 	 while true do
 	    x1,y1 = neightborByDirection(x,y, dir)
@@ -131,10 +191,10 @@ Map={
       end
 
 
-      if S[x][y] ~= 0 or S:isOutOfRange(x,y) then return nil end				   -- it's accepted to only put token on empty field
-      
+      if S[x][y] ~= 0 or S:isOutOfRange(x,y) then return nil end				   -- it's accepted to put token on empty field only
+									 
       S.LastMove={x,y}
-      S[x][y]=p											   -- place token on Map 
+      S[x][y]=p								   -- place token on Map 
      
       local hits=0
 
@@ -143,7 +203,7 @@ Map={
 	 local x2,y2,h2=calcLine(x,y,p,invertDirection(dir))
 
 	 local h=h1+h2-1
-	 if h >=3 then
+	 if h >= Game.minLine then
 	    --print(" ",h)
 	    makeNewLine(x1,y1,x2,y2)
 	    hits=hits+h-2
@@ -158,29 +218,112 @@ Map={
       S.NewLines:clear()
       S.LastMove={}
    end,
+
+   retCellsList = function(S,p)
+      local Res={}
+      for x=1, #S do
+	 for y=1, #S do
+	    if S[x][y] == p then
+	       table.insert(Res, {x,y})
+	    end
+	 end
+      end
+      return Res
+   end,
+   
+   retHitMovesList = function(S,p,deep, origp)
+      
+      local function retMaxHit(R,p1)
+	 local ret1,ret2,deep1,deep2 = 0,0,-1,-1
+	 local p2
+	 if p1==1 then p2=2 else p2=1 end
+	 for _,V in ipairs(R) do
+	    if V[p1]>ret1 then
+	       ret1=V[p1]
+	       deep1=V[5]
+	    end
+	    if V[p2]>ret2 then
+	       ret2=V[p2]
+	       deep2=V[5]
+	    end
+	 end
+	 return ret1, ret2, deep1, deep2
+      end
+      
+      
+      --print("deep="..deep)
+      local Res={}
+      local hits,hits2, th1, th2, td1, td2, edeep1, edeep2
+      deep=deep or 0
+      origp=origp or p
+      local p2 if p==1 then p2=2 else p2=1 end
+      local Cells=S:retCellsList(0)
+      for _,V in ipairs(Cells) do
+	 local TempMap = createNew(S)
+	 hits=TempMap:makeMove(p,V[1],V[2])
+	 hits2=0
+	 edeep1,edeep2=deep,deep
+	 if deep>0 then
+	    local Res2=TempMap:retHitMovesList(p2,deep-1,origp)  	    
+	    if #Res2>0 then
+	       th1, th2, td1, td2 = retMaxHit(Res2,p)
+	       if th1 < hits then
+		  edeep1=td1
+		  edeep2=td2
+	       else
+		  edeep1,edeep2 = deep, deep
+	       end
+	       hits=hits+th1
+	       hits2=hits2+th2
+	    end
+	 end
+	 
+	 if hits>0 or hits2>0 then 
+	    --print("hits", hits, p, hits2 )
+	    --TempMap:draw()
+	    local Ins={}
+	    Ins[p]=hits
+	    Ins[p2]=hits2
+	    Ins[3],Ins[4]=V[1],V[2]	    
+	    Ins[5]=edeep1
+	    Ins[6]=edeep2
+	    
+	    table.insert(Res, Ins)
+	    --table.dump(Res)
+	 end
+      end
+
+      return Res
+   end,
 }
 
 
+controllerHuman = {
+   init=function() return end,
+   retMove=function(Player)
+      x=inputNumber("X")
+      y=inputNumber("Y")
+      return x,y
+   end,
+   handleError=function(x,y)
+      print("ERROR: Bad move!")
+   end,
+}
 
 
--- Init
-Player1.name="Player #1"
-Player1.name="Player #2"
-Map:init(10)
-Map[5][2]=1
-Map[8][2]=1
-Map[7][2]=1
-Map[6][3]=1
-Map[6][1]=1
-Map[6][4]=1
-Map[7][3]=1
-Map[5][1]=1
-print()
-print(Map:makeMove(1,6,2))
-Map:draw()
-Map:endMove()
-Map:draw()
+-- Start
 
+Game:init()
+--[[      Map[1][2]=1
+      Map[4][2]=1
+      Map[3][2]=1
+      Map[2][3]=1
+      Map[2][1]=1
+      Map[2][4]=1
+      Map[5][3]=1
+      Map[1][1]=1]]--
+
+Game:play()
   
 
 
