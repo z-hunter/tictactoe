@@ -1,4 +1,3 @@
-
 function table.deepcopy(o, seen)  --> recursively copies a table's contents, ensures that metatables are preserved
   -- Handle non-tables and previously-seen tables. |SRC: https://gist.github.com/tylerneylon/81333721109155b2d244#file-copy-lua-L84
   if type(o) ~= "table" then return o
