@@ -27,11 +27,11 @@ Game = {
       Player2.name="Player #2"
    
       O={
-	 [1]={nam="Map size", curval=Game.mapSize, minval=Game.minLine, maxval=100},
+	 [1]={nam="Map size", curval=Game.mapSize, minval=3, maxval=100},
 	 [2]={nam="Player#1 controller(0=Human, 1=AI)", curval=Player1.controller, minval=0, maxval=1},
 	 [3]={nam="Player#2 controller(0=Human, 1=AI)", curval=Player2.controller, minval=0, maxval=1},
       }
-      getOptions(O)
+      O=getOptions(O)
       S.mapSize=O[1].curval
       S.minLine=S.mapSize
       Map:init(Game.mapSize)
