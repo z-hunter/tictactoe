@@ -34,6 +34,8 @@ Game = {
       getOptions(O)
       Game.mapSize=O[1].curval
       Map:init(Game.mapSize)
+      Player1.controller=O[2].curval
+      Player2.controller=O[3].curval
       Game.CurrentPlayer=Player1
       Game.turnsLeft=Game.mapSize
    
@@ -45,7 +47,7 @@ Game = {
       Map:draw();
       repeat
 	 if Game.CurrentPlayer.controller == 0 then controller=controllerHuman
-         elseif Game.CurrentPlayer.controller == 1 then controller=controllerUI1
+         elseif Game.CurrentPlayer.controller == 1 then controller=controllerAI
 	 end
 
 	 print(Game.CurrentPlayer.name.." turn.")
@@ -191,7 +193,7 @@ Map={
       end
 
 
-      if S[x][y] ~= 0 or S:isOutOfRange(x,y) then return nil end				   -- it's accepted to put token on empty field only
+      if  S:isOutOfRange(x,y) or S[x][y] ~= 0 then return nil end		   -- it's accepted to put token on empty field only
 									 
       S.LastMove={x,y}
       S[x][y]=p								   -- place token on Map 
