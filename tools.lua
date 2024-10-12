@@ -62,8 +62,12 @@ function saveTableToFile(Tbl, filename)
     local function serializeTable(t, indent)
         indent = indent or ""  -- отступ для форматирования вывода
         for key, value in pairs(t) do
-            local keyString = tostring(key)
-
+            local keyString
+	    if type(key) == "number" then
+	       keyString = "["..tostring(key).."]"
+	    else
+	       keyString = tostring(key)
+	    end
             if type(value) == "table" then
                 file:write(indent .. keyString .. " = {\n")
                 serializeTable(value, indent .. "  ")  -- рекурсивно обрабатываем вложенные таблицы
@@ -83,17 +87,58 @@ function saveTableToFile(Tbl, filename)
     return true
 end
 
+function loadTableFromFile(filename)
+    local file = io.open(filename, "r")
+    
+    if not file then
+        return nil, "Cannot open file "..filename.." for read!"
+    end
+
+    local content = file:read("*all")  -- читаем всё содержимое файла
+    file:close()
+
+    -- Добавляем обёртку "return" к содержимому таблицы
+    local luaCode = "return " .. content
+    -- Компилируем и выполняем этот код
+    local func, err = loadstring(luaCode)
+
+    if not func then
+        return nil, "Lua loadstring failed: " .. err
+    end
+
+    local status, result = pcall(func)
+
+    if not status then
+        return nil, "Lua pcall failed: " .. result
+    end
+
+    return result
+end
+
+
 
 function getOptions(O)					-- O = { n.{nam,curval,minval,maxval}, .. }
-	
-	local function isNoErr(v,vmin,vmax)
+
+     
+      local function isNoErr(v,vmin,vmax)
 		--print(v,vmin,vmax)
 		if v=="" then return true
 		elseif v < vmin or v > vmax then
 				 print("OUT OF RANGE. Value must be in the range of "..vmin.."--"..vmax)
 		else return true				
 		end		
-	end
+      end
+
+      local filename = "options~"	
+      local O2, err = loadTableFromFile(filename)
+      if O2 then
+          -- print("Options loaded from file")
+	  O = O2
+      else
+	 -- print ("Options not loaded from file " .. err)
+      end
+	
+	
 	
 	while true do
 		for k,V in ipairs (O) do
@@ -102,23 +147,23 @@ function getOptions(O)					-- O = { n.{nam,curval,minval,maxval}, .. }
 		print()
 		repeat
 			opt=inputNumber("Enter number of option to change or just [Enter] to continue")
-			if opt == "" then return O end
+			if opt == "" then
+			   local success, err = saveTableToFile(O, filename)
+			   if not success then print("WARNING: " .. err) end
+			   return O
+			end
 		until isNoErr(opt,1,#O)
+		
 		repeat
 			val=inputNumber("Current value is "..O[opt].curval..". Enter new value or just [Enter] to keep current")
 		until isNoErr(val,O[opt].minval,O[opt].maxval)
+		
 		if val~="" then
 			O[opt].curval = val
 		end
 		print()
 	end
 	 
-	local success, err = saveTableToFile(O, "options~")
-	if not success then
-	    print("WARNING: " .. err)
-        else
-	    print ("Ok")	    
-	end
 
 end
 
