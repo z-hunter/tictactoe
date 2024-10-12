@@ -33,14 +33,14 @@ function createNew(what, q, init)
 end
 
  
- function input(txt) 
+function input(txt) 
 	io.write("\n"..txt.."> ")
 	io.flush()
 	local answer=io.read()
 	return answer
- end
+end
  
-  function inputNumber(txt) 
+function inputNumber(txt) 
 	repeat
 		ret=input(txt)
 		if ret ~="" then ret=tonumber(ret) end
@@ -49,9 +49,42 @@ end
 		end
 	until ret	
 	return ret
-  end
+end
   
-  function getOptions(O)					-- O = { .n.{nam,curval,minval,maxval} }
+
+function saveTableToFile(Tbl, filename)
+    local file = io.open(filename, "w")  -- открываем файл для записи
+
+    if not file then
+        return false, "Cannot open file ".. filename .." to write!"
+    end
+
+    local function serializeTable(t, indent)
+        indent = indent or ""  -- отступ для форматирования вывода
+        for key, value in pairs(t) do
+            local keyString = tostring(key)
+
+            if type(value) == "table" then
+                file:write(indent .. keyString .. " = {\n")
+                serializeTable(value, indent .. "  ")  -- рекурсивно обрабатываем вложенные таблицы
+                file:write(indent .. "},\n")
+            else
+                local valueString = type(value) == "string" and string.format("%q", value) or tostring(value)
+                file:write(indent .. keyString .. " = " .. valueString .. ",\n")
+            end
+        end
+    end
+
+    file:write("{\n")
+    serializeTable(Tbl, "  ")  -- запускаем сериализацию с начальным отступом
+    file:write("}\n")
+
+    file:close()
+    return true
+end
+
+
+function getOptions(O)					-- O = { n.{nam,curval,minval,maxval}, .. }
 	
 	local function isNoErr(v,vmin,vmax)
 		--print(v,vmin,vmax)
@@ -78,10 +111,21 @@ end
 			O[opt].curval = val
 		end
 		print()
-	end	
-  end
+	end
+	 
+	local success, err = saveTableToFile(O, "options~")
+	if not success then
+	    print("WARNING: " .. err)
+        else
+	    print ("Ok")	    
+	end
+
+end
+
+
   
- function table.maxkey(T)
+  
+function table.maxkey(T)
 	local inv={}
 	for k,_ in pairs(T) do
 		table.insert(inv,k)

@@ -13,9 +13,9 @@ t_Player = {
 
 Game = {
 
-   minLine=3,			       -- minimal lenght of cells row with same tokens to become a line
    --scoresToWin=0,		       -- 0 = no prematurely win
    mapSize=3,
+   --minLine=3,			       -- minimal lenght of cells row with same tokens to become a line
 
    --
    init = function(S)
@@ -32,13 +32,13 @@ Game = {
 	 [3]={nam="Player#2 controller(0=Human, 1=AI)", curval=Player2.controller, minval=0, maxval=1},
       }
       getOptions(O)
-      Game.mapSize=O[1].curval
+      S.mapSize=O[1].curval
+      S.minLine=S.mapSize
       Map:init(Game.mapSize)
       Player1.controller=O[2].curval
       Player2.controller=O[3].curval
-      Game.CurrentPlayer=Player1
-      Game.turnsLeft=Game.mapSize
-   
+      S.CurrentPlayer=Player1
+    
    end,
 
    --
@@ -46,16 +46,17 @@ Game = {
 
       Map:draw();
       repeat
-	 if Game.CurrentPlayer.controller == 0 then controller=controllerHuman
-         elseif Game.CurrentPlayer.controller == 1 then controller=controllerAI
+	 if Game.CurrentPlayer.controller == 0 then curController=controllerHuman
+         elseif Game.CurrentPlayer.controller == 1 then curController=controllerAI
+	 else error("Unknown controller type.")
 	 end
 
 	 print(Game.CurrentPlayer.name.." turn.")
 	 repeat
-	    x,y = controller.retMove(Game.CurrentPlayer)
+	    x,y = curController.retMove(Game.CurrentPlayer)
 	    result=Map:makeMove(Game.CurrentPlayer.token,x,y)
 	    if not result then
-		controller.handleError(x,y)
+		curController.handleError(x,y)
 	    end
 	 until result
 	 
@@ -68,10 +69,13 @@ Game = {
 	 else Game.CurrentPlayer = Player1
 	 end
 
-	 local R=Map:retHitMovesList(Game.CurrentPlayer.token,3)
-	 print("__",Game.CurrentPlayer.token)
-	 table.dumpRet(R)
-      until table.maxkey(R)==nil
+	 
+	 --local R=Map:retHitMovesList(Game.CurrentPlayer.token,3)
+	 --print("__",Game.CurrentPlayer.token)
+	 --table.dumpRet(R)
+      --until table.maxkey(R)==nil
+      until #(Map:getFreeCellsList()) == 0 or result > 0
+
 
    end,
 
@@ -131,6 +135,19 @@ Map={
    --
    isOutOfRange = function(S, x,y)
       if x<1 or x>#S or y<1 or y>#S then return true end
+   end,
+   --
+   getFreeCellsList = function(S)			 --> array of {x,y} of all free Cells
+      C={}
+      for x=1,#S,1 do
+	 for y=1,#S[x],1
+	    do
+	    if S[x][y] == 0 then
+	       table.insert(C,{x,y})
+	    end
+	 end
+      end
+      return (C)
    end,
    
    --
@@ -192,11 +209,11 @@ Map={
 	 return x,y,count
       end
 
-
-      if  S:isOutOfRange(x,y) or S[x][y] ~= 0 then return nil end		   -- it's accepted to put token on empty field only
+      --------->      
+      if  S:isOutOfRange(x,y) or S[x][y] ~= 0 then return nil end	  -- check for bad moves
 									 
       S.LastMove={x,y}
-      S[x][y]=p								   -- place token on Map 
+      S[x][y]=p								  -- place token on Map 
      
       local hits=0
 
@@ -327,6 +344,12 @@ Game:init()
 
 Game:play()
   
-
+if Player1.score > Player2.score then
+   print ("Player#1 won.")
+elseif Player2.score > Player1.score then
+   print ("Player#2 won.")
+else
+   print ("Draw!")
+end
 
 
