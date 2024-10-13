@@ -54,7 +54,6 @@ end
 
 function saveTableToFile(Tbl, filename)
     local file = io.open(filename, "w")  -- открываем файл для записи
-
     if not file then
         return false, "Cannot open file ".. filename .." to write!"
     end
@@ -99,11 +98,20 @@ function loadTableFromFile(filename)
 
     -- Добавляем обёртку "return" к содержимому таблицы
     local luaCode = "return " .. content
-    -- Компилируем и выполняем этот код
-    local func, err = loadstring(luaCode)
+
+    -- Компилируем и выполняем этот код    
+    local func, err
+    local major, minor = _VERSION:match("Lua (%d+)%.(%d+)")
+    major, minor = tonumber(major), tonumber(minor)
+
+    if major > 5 or (major == 5 and minor >= 2) then  -- для Lua 5.2 и выше используем load
+        func, err = load(luaCode)
+    else					      -- для 5.1 и ниже используем loadstring
+        func, err = loadstring(luaCode)
+    end
 
     if not func then
-        return nil, "Lua loadstring failed: " .. err
+        return nil, "Lua loadstring failed: " .. (err or "")
     end
 
     local status, result = pcall(func)

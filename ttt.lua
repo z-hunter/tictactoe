@@ -1,4 +1,4 @@
--- tictactoe game (c) Michael.Voitovich@gmail.com, 2018
+-- tictactoe game (c) Michael.Voitovich@gmail.com, 2018, 2024
 require "tools"
 os.execute("chcp 65001 >nul")	       -- for MS Windows console 
 
@@ -65,9 +65,7 @@ Game = {
 	 Map:draw()
 	 Map:endMove()
 
-	 if Game.CurrentPlayer == Player1 then Game.CurrentPlayer = Player2
-	 else Game.CurrentPlayer = Player1
-	 end
+	Game.CurrentPlayer = Game.CurrentPlayer == Player1 and Player2 or Player1	     -- switch next player
 
 	 
 	 --local R=Map:retHitMovesList(Game.CurrentPlayer.token,3)
