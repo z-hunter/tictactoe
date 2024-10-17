@@ -18,7 +18,7 @@ Game = {
    --minLine=3,			       -- minimal lenght of cells row with same tokens to become a line
 
    --
-   init = function(S)
+	init = function(S)
       print ("Welcome to the big TicTacToe game. Options is:")
 
       Player1=createNew(t_Player)
@@ -27,9 +27,9 @@ Game = {
       Player2.name="Player #2"
    
       O={
-	 [1]={nam="Map size", curval=Game.mapSize, minval=3, maxval=100},
-	 [2]={nam="Player#1 controller(0=Human, 1=AI)", curval=Player1.controller, minval=0, maxval=1},
-	 [3]={nam="Player#2 controller(0=Human, 1=AI)", curval=Player2.controller, minval=0, maxval=1},
+			[1]={nam="Map size", curval=Game.mapSize, minval=3, maxval=100},
+			[2]={nam="Player#1 controller(0=Human, 1=AI)", curval=Player1.controller, minval=0, maxval=1},
+			[3]={nam="Player#2 controller(0=Human, 1=AI)", curval=Player2.controller, minval=0, maxval=1},
       }
       O=getOptions(O)
       S.mapSize=O[1].curval
@@ -39,41 +39,38 @@ Game = {
       Player2.controller=O[3].curval
       S.CurrentPlayer=Player1
     
-   end,
+	end,
 
-   --
-   play = function()
+	--
+	play = function()
 
-      Map:draw();
-      repeat
-	 if Game.CurrentPlayer.controller == 0 then curController=controllerHuman
-         elseif Game.CurrentPlayer.controller == 1 then curController=controllerAI
-	 else error("Unknown controller type.")
-	 end
+   	Map:draw();
+   	repeat
+			if Game.CurrentPlayer.controller == 0 then curController=controllerHuman
+			elseif Game.CurrentPlayer.controller == 1 then curController=controllerAI
+			else error("Unknown controller type.")
+			end
 
-	 print(Game.CurrentPlayer.name.." turn.")
-	 repeat
-	    x,y = curController.retMove(Game.CurrentPlayer)
-	    result=Map:makeMove(Game.CurrentPlayer.token,x,y)
-	    if not result then
-		curController.handleError(x,y)
-	    end
-	 until result
+			print(Game.CurrentPlayer.name.." turn.")
+			repeat
+				x,y = curController.retMove(Game.CurrentPlayer)
+				result=Map:makeMove(Game.CurrentPlayer.token,x,y)
+				if not result then
+					curController.handleError(x,y)
+				end
+			until result
 	 
-	 Game.CurrentPlayer.score=Game.CurrentPlayer.score+result
-	 print(Game.CurrentPlayer.name.." moves to "..x..","..y.." and made "..result.." score. Total is "..Game.CurrentPlayer.score)
-	 Map:draw()
-	 Map:endMove()
+			Game.CurrentPlayer.score=Game.CurrentPlayer.score+result
+			print(Game.CurrentPlayer.name.." moves to "..x..","..y.." and made "..result.." score. Total is "..Game.CurrentPlayer.score)
+			Map:draw()
+			Map:endMove()
 
-	Game.CurrentPlayer = Game.CurrentPlayer == Player1 and Player2 or Player1	     -- switch next player
-
-	 
-	 --local R=Map:retHitMovesList(Game.CurrentPlayer.token,3)
-	 --print("__",Game.CurrentPlayer.token)
-	 --table.dumpRet(R)
-      --until table.maxkey(R)==nil
-      until #(Map:getFreeCellsList()) == 0 or result > 0
-
+			Game.CurrentPlayer = Game.CurrentPlayer == Player1 and Player2 or Player1	     -- switch next player
+			--local R=Map:retHitMovesList(Game.CurrentPlayer.token,3)
+			--print("__",Game.CurrentPlayer.token)
+			--table.dumpRet(R)
+			--until table.maxkey(R)==nil
+		until #(Map:getFreeCellsList()) == 0 or result > 0
 
    end,
 
@@ -81,30 +78,30 @@ Game = {
 
 
 Map={
-   NewLines={		 -- list of all cells, turned into lines on previous move. Used for highlihting in .draw()
-      key = function(x,y)
-	 return tostring(x)..tostring(y)
-      end,
-      add = function(S,x,y)
-	 S.List[S.key(x,y)]={x,y}
-      end,
-      find = function(S,x,y)
-	 return S.List[S.key(x,y)]
-      end,
-      clear=function(S)	 S.List={}  end
-   },
+	NewLines={		 -- list of all cells, turned into lines on previous move. Used for highlihting in .draw()
+		key = function(x,y)
+			return tostring(x)..tostring(y)
+		end,
+		add = function(S,x,y)
+			S.List[S.key(x,y)]={x,y}
+		end,
+		find = function(S,x,y)
+			return S.List[S.key(x,y)]
+		end,
+		clear=function(S)	 S.List={}  end
+	},
    
    --
-   clear=function(S) table.clearIndexed(S) end,
+	clear=function(S) table.clearIndexed(S) end,
    --
-   init=function(S,size)	 --> void
-      S.NewLines:clear()
-      S.LastMove={}
-      S:clear()
-      for y=1, size do
-	 S[y]=createNew("array",size,0)
-      end
-   end,
+	init=function(S,size)	 --> void
+		S.NewLines:clear()
+		S.LastMove={}
+		S:clear()
+		for y=1, size do
+			S[y]=createNew("array",size,0)
+		end
+	end,
    
    --
    draw=function(S)		 --> void
@@ -131,101 +128,100 @@ Map={
    end,
    
    --
-   isOutOfRange = function(S, x,y)
-      if x<1 or x>#S or y<1 or y>#S then return true end
-   end,
+	isOutOfRange = function(S, x,y)
+		if x<1 or x>#S or y<1 or y>#S then return true end
+	end,
    --
-   getFreeCellsList = function(S)			 --> array of {x,y} of all free Cells
-      C={}
-      for x=1,#S,1 do
-	 for y=1,#S[x],1
-	    do
-	    if S[x][y] == 0 then
-	       table.insert(C,{x,y})
-	    end
-	 end
-      end
-      return (C)
-   end,
+	getFreeCellsList = function(S)			 --> array of {x,y} of all free Cells
+		C={}
+		for x=1,#S,1 do
+			for y=1,#S[x],1 do
+				if S[x][y] == 0 then
+					table.insert(C,{x,y})
+				end
+			end
+		end
+		return (C)
+	end,
    
    --
    makeMove=function(S,p,x,y)	 -- p:player's token; x,y:coordinates --> hits or nil    
 
-      local function makeNewLine(x,y,x2,y2)
-	 local function calcDelta(v1,v2)
-	    if v1>v2 then return -1
-	    elseif v1<v2 then return 1
-	    else return 0
-	    end
-	 end
+		local function makeNewLine(x,y,x2,y2)
+
+			local function calcDelta(v1,v2)
+				if v1>v2 then return -1
+				elseif v1<v2 then return 1
+				else return 0
+				end
+			end
 	 
-	 local function proceedCell(x,y)
-	    if S[x][y]==0 then error("Map.makeMove() -> makeNewLine(): Zero-cell in line!")
-	    elseif S[x][y]<3 then S[x][y]=S[x][y]+2
-	    end
-	    S.NewLines:add (x,y)
-	 end
+			local function proceedCell(x,y)
+				if S[x][y]==0 then error("Map.makeMove() -> makeNewLine(): Zero-cell in line!")
+				elseif S[x][y]<3 then S[x][y]=S[x][y]+2
+				end
+				S.NewLines:add (x,y)
+			end
 
-	 repeat	    
-	    proceedCell(x,y)
-	    x=calcDelta(x,x2)+x
-	    y=calcDelta(y,y2)+y
-	 until x == x2 and y == y2
-	 proceedCell(x,y)
-      end
-      
-      function neightborByDirection(x,y, dir)	   --> new x,y for neightbor cell in direction dir from cell x,y   
-	 if dir==1 then y=y+1
-	 elseif dir == 2 then x=x+1; y=y+1 
-	 elseif dir == 3 then x=x+1
-	 elseif dir == 4 then x=x+1; y=y-1
-	 elseif dir == 5 then y=y-1
-	 elseif dir == 6 then y=y-1; x=x-1
-	 elseif dir == 7 then x=x-1
-	 elseif dir == 8 then y=y+1; x=x-1
-	 else return nil
-	 end
-	 return x,y   
-      end
+			repeat	    
+				proceedCell(x,y)
+				x=calcDelta(x,x2)+x
+				y=calcDelta(y,y2)+y
+			until x == x2 and y == y2
+			proceedCell(x,y)
+		end
+    
+		function neightborByDirection(x,y, dir)	   --> new x,y for neightbor cell in direction dir from cell x,y   
+			if dir==1 then y=y+1
+			elseif dir == 2 then x=x+1; y=y+1 
+			elseif dir == 3 then x=x+1
+			elseif dir == 4 then x=x+1; y=y-1
+			elseif dir == 5 then y=y-1
+			elseif dir == 6 then y=y-1; x=x-1
+			elseif dir == 7 then x=x-1
+			elseif dir == 8 then y=y+1; x=x-1
+			else return nil
+			end
+			return x,y   
+   	end
 
-      function invertDirection(dir)		   --> direction opposite to dir
-	 dir = dir+4
-	 if dir > 8 then dir=dir-8 end
-	 return dir
-      end
+		function invertDirection(dir)		   --> direction opposite to dir
+			dir = dir+4
+			if dir > 8 then dir=dir-8 end
+			return dir
+		end
 
       function calcLine(x,y,p,dir)		   --> ~x,y of last p token on line in direction dir, ~lenght of line (at least 1)  
-	 count = 1
-	 while true do
-	    x1,y1 = neightborByDirection(x,y, dir)
-	    if not S:isOutOfRange(x1,y1) and S[x1][y1] == p then
-	       x,y = x1,y1
-	       count=count+1
-	    else break
-	    end
-	 end
-	 return x,y,count
-      end
+      	count = 1
+			while true do
+				x1,y1 = neightborByDirection(x,y, dir)
+				if not S:isOutOfRange(x1,y1) and S[x1][y1] == p then
+					x,y = x1,y1
+					count=count+1
+				else break
+				end
+			end
+			return x,y,count
+		end
 
-      --------->      
+   --------->      
       if  S:isOutOfRange(x,y) or S[x][y] ~= 0 then return nil end	  -- check for bad moves
-									 
-      S.LastMove={x,y}
-      S[x][y]=p								  -- place token on Map 
+	
+		S.LastMove={x,y}
+		S[x][y]=p								  -- place token on Map 
      
-      local hits=0
+		local hits=0
 
-      for dir=1, 8 do
-	 local x1,y1,h1=calcLine(x,y,p,dir) 
-	 local x2,y2,h2=calcLine(x,y,p,invertDirection(dir))
-
-	 local h=h1+h2-1
-	 if h >= Game.minLine then
-	    --print(" ",h)
-	    makeNewLine(x1,y1,x2,y2)
-	    hits=hits+h-2
-	 end
-      end
+		for dir=1, 4 do
+			local x1,y1,h1=calcLine(x,y,p,dir) 
+			local x2,y2,h2=calcLine(x,y,p,invertDirection(dir))
+			local h=h1+h2-1
+			if h >= Game.minLine then
+				--print(" ",h)
+				makeNewLine(x1,y1,x2,y2)
+				hits=(hits+h)/Game.minLine
+			end
+		end
       
       return hits
 
