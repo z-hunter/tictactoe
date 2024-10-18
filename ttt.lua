@@ -205,12 +205,12 @@ Map={
 			return x,y,count
 		end
 
-   --------->      
+   ---------> entry     
       if  S:isOutOfRange(x,y) or S[x][y] ~= 0 then return nil end	  -- check for bad moves
 	
 		S.LastMove={x,y}
 		S[x][y]=p								  -- place token on Map 
-		local hits=0
+		local lines=0
 		for dir=1, 4 do
 			local x1,y1,h1=calcLine(x,y,p,dir) 
 			local x2,y2,h2=calcLine(x,y,p,invertDirection(dir))
@@ -218,10 +218,10 @@ Map={
 			if h >= Game.minLine then
 				--print(" ",h)
 				makeNewLine(x1,y1,x2,y2)
-				hits=(hits+h)/Game.minLine
+				lines=(lines+1)
 			end
 		end
-      return hits
+      return lines
 
    end,
 
