@@ -52,41 +52,40 @@ function inputNumber(txt)
 end
   
 
-function saveTableToFile(Tbl, filename)
-    local file = io.open(filename, "w")  -- открываем файл для записи
-    if not file then
-        return false, "Cannot open file ".. filename .." to write!"
-    end
+function table.saveToFile(Tbl, filename)
+	local file = io.open(filename, "w")  -- открываем файл для записи
+	if not file then
+		return false, "Cannot open file ".. filename .." to write!"
+	end
 
-    local function serializeTable(t, indent)
-        indent = indent or ""  -- отступ для форматирования вывода
-        for key, value in pairs(t) do
-            local keyString
-	    if type(key) == "number" then
-	       keyString = "["..tostring(key).."]"
-	    else
-	       keyString = tostring(key)
-	    end
-            if type(value) == "table" then
-                file:write(indent .. keyString .. " = {\n")
-                serializeTable(value, indent .. "  ")  -- рекурсивно обрабатываем вложенные таблицы
-                file:write(indent .. "},\n")
-            else
-                local valueString = type(value) == "string" and string.format("%q", value) or tostring(value)
-                file:write(indent .. keyString .. " = " .. valueString .. ",\n")
-            end
-        end
-    end
+	local function serializeTable(t, indent)
+		indent = indent or ""  -- отступ для форматирования вывода
+		for key, value in pairs(t) do
+			local keyString
+			if type(key) == "number" then
+				keyString = "["..tostring(key).."]"
+			else
+				keyString = tostring(key)
+			end
+			if type(value) == "table" then
+				file:write(indent .. keyString .. " = {\n")
+				serializeTable(value, indent .. "  ")  -- рекурсивно обрабатываем вложенные таблицы
+				file:write(indent .. "},\n")
+			else
+				local valueString = type(value) == "string" and string.format("%q", value) or tostring(value)
+				file:write(indent .. keyString .. " = " .. valueString .. ",\n")
+			end
+		end
+	end
 
-    file:write("{\n")
-    serializeTable(Tbl, "  ")  -- запускаем сериализацию с начальным отступом
-    file:write("}\n")
-
-    file:close()
-    return true
+	file:write("{\n")
+	serializeTable(Tbl, "  ")  -- запускаем сериализацию с начальным отступом
+	file:write("}\n")
+	file:close()
+	return true
 end
 
-function loadTableFromFile(filename)
+function table.loadFromFile(filename)
     local file = io.open(filename, "r")
     
     if not file then
@@ -128,26 +127,24 @@ end
 function getOptions(O)					-- O = { n.{nam,curval,minval,maxval}, .. }
 
      
-      local function isNoErr(v,vmin,vmax)
+	local function isNoErr(v,vmin,vmax)
 		--print(v,vmin,vmax)
 		if v=="" then return true
 		elseif v < vmin or v > vmax then
 				 print("OUT OF RANGE. Value must be in the range of "..vmin.."--"..vmax)
 		else return true				
 		end		
-      end
+	end
 
       local filename = "options~"	
-      local O2, err = loadTableFromFile(filename)
+      local O2, err = table.loadFromFile(filename)
       if O2 then
-          -- print("Options loaded from file")
-	  O = O2
-      else
-	 -- print ("Options not loaded from file " .. err)
-      end
-	
-	
-	
+      	-- print("Options loaded from file")
+			O = O2
+		else
+			-- print ("Options not loaded from file " .. err)
+		end
+			
 	while true do
 		for k,V in ipairs (O) do
 			io.write(k..":"..V.nam.." = "..V.curval.."    ")
@@ -156,7 +153,7 @@ function getOptions(O)					-- O = { n.{nam,curval,minval,maxval}, .. }
 		repeat
 			opt=inputNumber("Enter number of option to change or just [Enter] to continue")
 			if opt == "" then
-			   local success, err = saveTableToFile(O, filename)
+			   local success, err = table.saveToFile(O, filename)
 			   if not success then print("WARNING: " .. err) end
 			   return O
 			end

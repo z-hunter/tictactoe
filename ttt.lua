@@ -19,8 +19,8 @@ Game = {
 
    --
 	init = function(S)
-      print ("Welcome to the big TicTacToe game. Options is:")
-
+      print ("Welcome to TicTacToe Extended. Options is:")
+   
       Player1=createNew(t_Player)
       Player2=createNew(t_Player)
       Player2.token=2
@@ -105,33 +105,34 @@ Map={
    
    --
    draw=function(S)		 --> void
-      for y=#S,1,-1 do
-	 io.write(string.format("%2u· ",y))		 -- map Y-labels
-	 for x=1,#S do
-	    if S.NewLines:find(x,y) then char="x"	 -- new lines, created on last move, highlighted as scpecial characters
-	    else char=S[x][y]				 
-	    end
-	    if S.LastMove[1]== x and S.LastMove[2]== y then char = "X" end     
-	    io.write(char.." ")
-	 end
-	 print()
-      end
-      io.write("   ")
-      for i=1,#S do
-	 io.write(" ·")		       
-      end
-      io.write("\n   ")      
-      for i=1,#S do
-	 io.write(string.format("%2u",i))		 -- map X-labels      
-      end
-      print()
-   end,
+		for y=#S,1,-1 do
+			io.write(string.format("%2u· ",y))		 -- map Y-labels
+			for x=1,#S do
+				if S.NewLines:find(x,y) then char="x"	 -- new lines, created on last move, highlighted as scpecial characters
+				else char=S[x][y]				 
+				end
+				if S.LastMove[1]== x and S.LastMove[2]== y then char = "X" end     
+				io.write(char.." ")
+			end
+			print()
+		end
+		io.write("   ")
+		for i=1,#S do
+			io.write(" ·")		       
+		end
+		io.write("\n   ")      
+		for i=1,#S do
+			io.write(string.format("%2u",i))		 -- map X-labels      
+		end
+		print()
+	end,
    
    --
 	isOutOfRange = function(S, x,y)
 		if x<1 or x>#S or y<1 or y>#S then return true end
 	end,
-   --
+
+	--
 	getFreeCellsList = function(S)			 --> array of {x,y} of all free Cells
 		C={}
 		for x=1,#S,1 do
@@ -209,9 +210,7 @@ Map={
 	
 		S.LastMove={x,y}
 		S[x][y]=p								  -- place token on Map 
-     
 		local hits=0
-
 		for dir=1, 4 do
 			local x1,y1,h1=calcLine(x,y,p,dir) 
 			local x2,y2,h2=calcLine(x,y,p,invertDirection(dir))
@@ -222,7 +221,6 @@ Map={
 				hits=(hits+h)/Game.minLine
 			end
 		end
-      
       return hits
 
    end,
@@ -232,82 +230,80 @@ Map={
       S.LastMove={}
    end,
 
-   retCellsList = function(S,p)
-      local Res={}
-      for x=1, #S do
-	 for y=1, #S do
-	    if S[x][y] == p then
-	       table.insert(Res, {x,y})
-	    end
-	 end
-      end
-      return Res
-   end,
+	retCellsList = function(S,p)
+		local Res={}
+		for x=1, #S do
+			for y=1, #S do
+				if S[x][y] == p then
+					table.insert(Res, {x,y})
+				end
+			end
+		end
+		return Res
+	end,
    
    retHitMovesList = function(S,p,deep, origp)
-      
-      local function retMaxHit(R,p1)
-	 local ret1,ret2,deep1,deep2 = 0,0,-1,-1
-	 local p2
-	 if p1==1 then p2=2 else p2=1 end
-	 for _,V in ipairs(R) do
-	    if V[p1]>ret1 then
-	       ret1=V[p1]
-	       deep1=V[5]
-	    end
-	    if V[p2]>ret2 then
-	       ret2=V[p2]
-	       deep2=V[5]
-	    end
-	 end
-	 return ret1, ret2, deep1, deep2
-      end
-      
-      
-      --print("deep="..deep)
-      local Res={}
-      local hits,hits2, th1, th2, td1, td2, edeep1, edeep2
-      deep=deep or 0
-      origp=origp or p
-      local p2 if p==1 then p2=2 else p2=1 end
-      local Cells=S:retCellsList(0)
-      for _,V in ipairs(Cells) do
-	 local TempMap = createNew(S)
-	 hits=TempMap:makeMove(p,V[1],V[2])
-	 hits2=0
-	 edeep1,edeep2=deep,deep
-	 if deep>0 then
-	    local Res2=TempMap:retHitMovesList(p2,deep-1,origp)  	    
-	    if #Res2>0 then
-	       th1, th2, td1, td2 = retMaxHit(Res2,p)
-	       if th1 < hits then
-		  edeep1=td1
-		  edeep2=td2
-	       else
-		  edeep1,edeep2 = deep, deep
-	       end
-	       hits=hits+th1
-	       hits2=hits2+th2
-	    end
-	 end
-	 
-	 if hits>0 or hits2>0 then 
-	    --print("hits", hits, p, hits2 )
-	    --TempMap:draw()
-	    local Ins={}
-	    Ins[p]=hits
-	    Ins[p2]=hits2
-	    Ins[3],Ins[4]=V[1],V[2]	    
-	    Ins[5]=edeep1
-	    Ins[6]=edeep2
-	    
-	    table.insert(Res, Ins)
-	    --table.dump(Res)
-	 end
-      end
 
-      return Res
-   end,
+      local function retMaxHit(R,p1)
+			local ret1,ret2,deep1,deep2 = 0,0,-1,-1
+			local p2
+			if p1==1 then p2=2 else p2=1 end
+			for _,V in ipairs(R) do
+				if V[p1]>ret1 then
+					ret1=V[p1]
+					deep1=V[5]
+				end
+				if V[p2]>ret2 then
+					ret2=V[p2]
+					deep2=V[5]
+				end
+			end
+			return ret1, ret2, deep1, deep2
+		end
+
+
+		--print("deep="..deep)
+		local Res={}
+		local hits,hits2, th1, th2, td1, td2, edeep1, edeep2
+		deep=deep or 0
+		origp=origp or p
+		local p2 if p==1 then p2=2 else p2=1 end
+		local Cells=S:retCellsList(0)
+		for _,V in ipairs(Cells) do
+			local TempMap = createNew(S)
+			hits=TempMap:makeMove(p,V[1],V[2])
+			hits2=0
+			edeep1,edeep2=deep,deep
+			if deep>0 then
+				local Res2=TempMap:retHitMovesList(p2,deep-1,origp)  	    
+				if #Res2>0 then
+					th1, th2, td1, td2 = retMaxHit(Res2,p)
+					if th1 < hits then
+						edeep1=td1
+						edeep2=td2
+					else
+						edeep1,edeep2 = deep, deep
+					end
+					hits=hits+th1
+					hits2=hits2+th2
+				end
+			end
+
+			if hits>0 or hits2>0 then 
+				--print("hits", hits, p, hits2 )
+				--TempMap:draw()
+				local Ins={}
+				Ins[p]=hits
+				Ins[p2]=hits2
+				Ins[3],Ins[4]=V[1],V[2]	    
+				Ins[5]=edeep1
+				Ins[6]=edeep2
+				table.insert(Res, Ins)
+				--table.dump(Res)
+			end
+		end
+		return Res
+	end,
 }
 
 
@@ -327,14 +323,16 @@ controllerHuman = {
 -- Start
 
 Game:init()
---[[      Map[1][2]=1
+      Map[1][2]=1
       Map[4][2]=1
       Map[3][2]=1
       Map[2][3]=1
       Map[2][1]=1
       Map[2][4]=1
       Map[5][3]=1
-      Map[1][1]=1]]--
+      Map[1][1]=1
+		Map[5][2]=1
+		Map[2][5]=1
 
 Game:play()
   
