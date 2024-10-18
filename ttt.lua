@@ -13,7 +13,6 @@ t_Player = {
 
 Game = {
 
-   --scoresToWin=0,		       -- 0 = no prematurely win
    mapSize=3,
    --minLine=3,			       -- minimal lenght of cells row with same tokens to become a line
 
@@ -26,51 +25,63 @@ Game = {
       Player2.token=2
       Player2.name="Player #2"
    
-      O={
-			[1]={nam="Map size", curval=Game.mapSize, minval=3, maxval=100},
-			[2]={nam="Player#1 controller(0=Human, 1=AI)", curval=Player1.controller, minval=0, maxval=1},
-			[3]={nam="Player#2 controller(0=Human, 1=AI)", curval=Player2.controller, minval=0, maxval=1},
+      O=getOptions{
+			[1]={nam="Player#1 (0=Human, 1=AI)", curval=Player1.controller, minval=0, maxval=1},
+			[2]={nam="Player#2 (0=Human, 1=AI)", curval=Player2.controller, minval=0, maxval=1},
+			[3]={nam="Map size", curval=Game.mapSize, minval=3, maxval=100},
+			[4]={nam="Min. line (0=Same as Map size)", curval=0, minval=0, maxval=100},
+			[5]={nam="Game ending (0=first line made, 1=no free cells left)", curval=0, minval=0, maxval=1}
       }
-      O=getOptions(O)
-      S.mapSize=O[1].curval
-      S.minLine=S.mapSize
-      Map:init(Game.mapSize)
-      Player1.controller=O[2].curval
-      Player2.controller=O[3].curval
+      --O=getOptions(O)
+      
+      S.mapSize=O[3].curval
+      Map:init(S.mapSize)
+      if O[4].curval == 0 then S.minLine=S.mapSize      	
+      else S.minLine=O[4].curval
+      end
+		S.endCondition=O[5].curval
+      Player1.controller=O[1].curval
+      Player2.controller=O[2].curval
       S.CurrentPlayer=Player1
     
 	end,
 
 	--
-	play = function()
+	play = function(S)
 
    	Map:draw();
    	repeat
-			if Game.CurrentPlayer.controller == 0 then curController=controllerHuman
-			elseif Game.CurrentPlayer.controller == 1 then curController=controllerAI
+			if S.CurrentPlayer.controller == 0 then curController=controllerHuman
+			elseif S.CurrentPlayer.controller == 1 then curController=controllerAI
 			else error("Unknown controller type.")
 			end
 
-			print(Game.CurrentPlayer.name.." turn.")
+			print(S.CurrentPlayer.name.." turn.")
 			repeat
-				x,y = curController.retMove(Game.CurrentPlayer)
-				result=Map:makeMove(Game.CurrentPlayer.token,x,y)
+				x,y = curController.retMove(S.CurrentPlayer)
+				result=Map:makeMove(S.CurrentPlayer.token,x,y)
 				if not result then
 					curController.handleError(x,y)
 				end
 			until result
 	 
-			Game.CurrentPlayer.score=Game.CurrentPlayer.score+result
-			print(Game.CurrentPlayer.name.." moves to "..x..","..y.." and made "..result.." score. Total is "..Game.CurrentPlayer.score)
+			S.CurrentPlayer.score=S.CurrentPlayer.score+result
+			print(S.CurrentPlayer.name.." moves to "..x..","..y.." and made "..result.." score. Total is "..S.CurrentPlayer.score)
 			Map:draw()
 			Map:endMove()
 
-			Game.CurrentPlayer = Game.CurrentPlayer == Player1 and Player2 or Player1	     -- switch next player
+			S.CurrentPlayer = S.CurrentPlayer == Player1 and Player2 or Player1	     -- switch next player
+			
 			--local R=Map:retHitMovesList(Game.CurrentPlayer.token,3)
 			--print("__",Game.CurrentPlayer.token)
 			--table.dumpRet(R)
 			--until table.maxkey(R)==nil
-		until #(Map:getFreeCellsList()) == 0 or result > 0
+			
+			local theEnd	
+			if S.endCondition==1 then theEnd = (#(Map:getFreeCellsList()) == 0)
+			else theEnd = (result > 0)
+			end
+		until theEnd 
 
    end,
 
@@ -323,6 +334,10 @@ controllerHuman = {
 -- Start
 
 Game:init()
+		if Game.endCondition == 1 and	Game.minLine >= Game.mapSize then
+			print( string.format("Warning: line size %d does't make sense in selected configuration.", Game.minLine) )
+		end
+	
       Map[1][2]=1
       Map[4][2]=1
       Map[3][2]=1
