@@ -52,9 +52,9 @@ Game = {
 		Map:draw()
 		repeat
 			if S.CurrentPlayer.controller == 0 then
-				curController = controllerHuman
+				curController = ControllerHuman
 			elseif S.CurrentPlayer.controller == 1 then
-				curController = controllerAI
+				curController = ControllerAI
 			else
 				error("Unknown controller type.")
 			end
@@ -384,7 +384,7 @@ ControllerHuman = {
 
 Game:init()
 if Game.endCondition == 1 and Game.minLine >= Game.mapSize then
-	print(string.format("Warning: line size %n does't make sense in selected configuration", Game.minLine))
+	print(string.format("Warning: line size %d does't make sense in selected configuration", Game.minLine))
 end
 
 Map[1][2] = 1
