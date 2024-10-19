@@ -40,6 +40,11 @@ function input(txt)
 	return answer
 end
  
+
+function inputCommand()
+	
+end
+
 function inputNumber(txt) 
 	repeat
 		ret=input(txt)
@@ -172,8 +177,7 @@ function getOptions(O)					-- O = { n.{nam,curval,minval,maxval}, .. }
 
 end
 
-
-  
+ 
   
 function table.maxkey(T)
 	local inv={}
