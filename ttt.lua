@@ -2,7 +2,7 @@
 require("tools")
 os.execute("chcp 65001 >nul") -- for MS Windows console
 
-t_Player = {
+T_Player = {
 	name = "Player #1",
 	score = 0,
 	controller = 0, -- 0=user,1=AI1,2=AI2
@@ -18,8 +18,8 @@ Game = {
 	init = function(S)
 		print("Welcome to TicTacToe Extended. Options is:")
 
-		Player1 = createNew(t_Player)
-		Player2 = createNew(t_Player)
+		Player1 = createNew(T_Player)
+		Player2 = createNew(T_Player)
 		Player2.token = 2
 		Player2.name = "Player #2"
 
@@ -30,7 +30,6 @@ Game = {
 			[4] = { nam = "Min. line (0=Same as Map size)", curval = 0, minval = 0, maxval = 100 },
 			[5] = { nam = "Game ending (0=first line made, 1=no free cells left)", curval = 0, minval = 0, maxval = 1 },
 		})
-		--O=getOptions(O)
 
 		S.mapSize = O[3].curval
 		Map:init(S.mapSize)
@@ -47,7 +46,7 @@ Game = {
 
 	--
 	play = function(S)
-		local curController, x, y, result
+		local curController, command, x, y, result
 
 		Map:draw()
 		repeat
@@ -60,13 +59,23 @@ Game = {
 			end
 
 			print(S.CurrentPlayer.name .. " turn.")
-			repeat
-				x, y = curController.retMove(S.CurrentPlayer)
-				result = Map:makeMove(S.CurrentPlayer.token, x, y)
-				if not result then
-					curController.handleError(x, y)
+			repeat 											-- stay with the player until they makes the correct move
+				command, x, y = curController.retMove()
+
+				if command == "exit" then
+					break
+				else
+					result, err = Map:makeMove(S.CurrentPlayer.token, x, y)
+					if err then
+						curController.handleError(x, y, err)
+					end
 				end
 			until result
+
+			if command == "exit" then
+				S.CurrentPlayer.score = -1
+				break
+			end
 
 			S.CurrentPlayer.score = S.CurrentPlayer.score + result
 			print(
@@ -259,9 +268,11 @@ Map = {
 			return x, y, count
 		end
 
-		---------> entry
-		if S:isOutOfRange(x, y) or S[x][y] ~= 0 then
-			return nil
+	 ---------> 
+		if S:isOutOfRange(x, y) then
+			return nil, "coordinates is out of range"
+		elseif S[x][y] ~= 0 then 
+			return nil, "cell is not empty"
 		end -- check for bad moves
 
 		S.LastMove = { x, y }
@@ -369,14 +380,11 @@ Map = {
 }
 
 ControllerHuman = {
-	init = function() end,
 	retMove = function()
-		local x = inputNumber("X")
-		local y = inputNumber("Y")
-		return x, y
+		return inputCommand()
 	end,
-	handleError = function(x, y)
-		print("ERROR: Bad move!")
+	handleError = function(_, _, err)
+		print("BAD MOVE: "..err..".")
 	end,
 }
 
@@ -384,10 +392,10 @@ ControllerHuman = {
 
 Game:init()
 if Game.endCondition == 1 and Game.minLine >= Game.mapSize then
-	print(string.format("Warning: line size %d does't make sense in selected configuration", Game.minLine))
+	print(string.format("Warning: line size %d does't make much sense in this configuration", Game.minLine))
 end
 
-Map[1][2] = 1
+--[[Map[1][2] = 1
 Map[4][2] = 1
 Map[3][2] = 1
 Map[2][3] = 1
@@ -396,7 +404,7 @@ Map[2][4] = 1
 Map[5][3] = 1
 Map[1][1] = 1
 Map[5][2] = 1
-Map[2][5] = 1
+Map[2][5] = 1]]
 
 Game:play()
 
