@@ -59,7 +59,7 @@ Game = {
 			end
 
 			print(S.CurrentPlayer.name .. " turn.")
-			repeat 											-- stay with the player until they makes the correct move
+			repeat -- stay with the player until they makes the correct move
 				command, x, y = curController.retMove()
 
 				if command == "exit" then
@@ -94,14 +94,16 @@ Game = {
 
 			S.CurrentPlayer = S.CurrentPlayer == Player1 and Player2 or Player1 -- switch next player
 
-			--local R=Map:retHitMovesList(Game.CurrentPlayer.token,3)
-			--print("__",Game.CurrentPlayer.token)
-			--table.dumpRet(R)
+			--	local R = Map:getHitMovesList(Game.CurrentPlayer.token, 3)
+			--[[print("__",Game.CurrentPlayer.token)
+			for k, V in pairs(R) do
+				table.dump(V)
+			end]]
 			--until table.maxkey(R)==nil
 
 			local theEnd
 			if S.endCondition == 1 then
-				theEnd = (#(Map:getFreeCellsList()) == 0)
+				theEnd = (#(Map:getCellsList(0)) == 0)
 			else
 				theEnd = (result > 0)
 			end
@@ -173,19 +175,6 @@ Map = {
 		if x < 1 or x > #S or y < 1 or y > #S then
 			return true
 		end
-	end,
-
-	--
-	getFreeCellsList = function(S) --> array of {x,y} of all free Cells
-		C = {}
-		for x = 1, #S, 1 do
-			for y = 1, #S[x], 1 do
-				if S[x][y] == 0 then
-					table.insert(C, { x, y })
-				end
-			end
-		end
-		return C
 	end,
 
 	--
@@ -268,10 +257,10 @@ Map = {
 			return x, y, count
 		end
 
-	 ---------> 
+		--------->
 		if S:isOutOfRange(x, y) then
 			return nil, "coordinates is out of range"
-		elseif S[x][y] ~= 0 then 
+		elseif S[x][y] ~= 0 then
 			return nil, "cell is not empty"
 		end -- check for bad moves
 
@@ -295,8 +284,8 @@ Map = {
 		S.NewLines:clear()
 		S.LastMove = {}
 	end,
-
-	retCellsList = function(S, p)
+	--
+	getCellsList = function(S, p) --> array {x,y} with val of p
 		local Res = {}
 		for x = 1, #S do
 			for y = 1, #S do
@@ -307,7 +296,32 @@ Map = {
 		end
 		return Res
 	end,
+	--
 
+	getHitMovesList = function(S, p, deep) --> array of {x,y,h} with val is hits score
+		local function invertP(p)
+			if p == 1 then
+				p = 2
+			else
+				p = 1
+			end
+			return p
+		end
+
+		local H, h = {}, nil
+		local L = S:getCellsList(0) -- list of free cells
+		for _, V in pairs(L) do
+			--print(p, V[1], V[2])
+			h = S:makeMove(p, V[1], V[2])
+			if h then
+				table.insert(H, { V[1], V[2], h })
+				print(V[1], V[2], h)
+			end
+		end
+		return H
+	end,
+
+	--
 	retHitMovesList = function(S, p, deep, origp)
 		local function retMaxHit(R, p1)
 			local ret1, ret2, deep1, deep2 = 0, 0, -1, -1
@@ -341,7 +355,7 @@ Map = {
 		else
 			p2 = 1
 		end
-		local Cells = S:retCellsList(0)
+		local Cells = S:getCellsList(0)
 		for _, V in ipairs(Cells) do
 			local TempMap = createNew(S)
 			hits = TempMap:makeMove(p, V[1], V[2])
@@ -384,7 +398,7 @@ ControllerHuman = {
 		return inputCommand()
 	end,
 	handleError = function(_, _, err)
-		print("BAD MOVE: "..err..".")
+		print("BAD MOVE: " .. err .. ".")
 	end,
 }
 

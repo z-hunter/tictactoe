@@ -41,7 +41,7 @@ function input(txt)
 	return answer
 end
 
-function inputCommand() --> [command]: move/exit, x, y
+function inputCommand() --> [command,] x, y
 	local command, x, y
 	repeat
 		local str = input("Your move (x/y or exit)")
@@ -51,7 +51,7 @@ function inputCommand() --> [command]: move/exit, x, y
 			command = str
 		elseif pos then
 			x = tonumber(str:sub(1, pos - 1))
-			y = tonumber(str:sub(pos + 1))
+			y = tonumber(str:sub(pos + 1))	
 			if x and y then
 				command = "move"
 			end
