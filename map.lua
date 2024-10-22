@@ -29,7 +29,7 @@ Map = {
 	end,
 
 	--
-	draw = function(S) --> void
+	draw = function(S)                   --> void
 		for y = #S, 1, -1 do
 			io.write(string.format("%2u· ", y)) -- map Y-labels
 			for x = 1, #S do
@@ -186,27 +186,31 @@ Map = {
 	--
 
 	getHitMovesList = function(S, p, deep) --> array of {x,y,h} with val is hits score
-		local function invertP(p) --> p (Map token) of another player
-			if p == 1 then
-				p = 2
-			else
-				p = 1
-			end
-			return p == 1 and 2 or 1 
+		local function invertP(p)           --> p (Map token) of opposite player
+			return p == 1 and 2 or 1
 		end
 
-		local H, h = {}, nil
+		local H, h = {}, 0
 		local L = S:getCellsList(0) -- list of free cells
 		for _, V in pairs(L) do
 			local TempMap = createNew(S)
-			TempMap.NewLines:add(V[1], V[2])
-			TempMap:draw()
+			--TempMap.NewLines:add(V[1], V[2])
 			h = TempMap:makeMove(p, V[1], V[2])
+
+			if h == 0 and deep > 0 then
+				local H2 = TempMap:getHitMovesList(invertP(p), deep - 1)
+				h = h - #H2 / 2
+			end
 			if h > 0 then
 				table.insert(H, { V[1], V[2], h })
-				print(V[1], V[2], h)
+
+				io.write("|" .. tostring(deep))
+				io.write(" " .. tostring(p) .. ">" .. tostring(V[1]) .. "," .. tostring(V[2]) .. "-" .. tostring(h))
+				--
+				-- TempMap:draw()
 			end
 		end
+
 		return H
 	end,
 

@@ -44,20 +44,20 @@ end
 function inputCommand() --> [command,] x, y
 	local command, x, y
 	repeat
-		local str = input("Your move (x/y or exit)")
+		local str = input("Your move (x/y or e for exit)")
 		str = str:gsub("%s+", "") -- remove spaces
 		local pos, _ = str:find("/")
-		if not pos and str == "exit" then
-			command = str
+		if not pos and str == "e" then
+			command = "exit"
 		elseif pos then
 			x = tonumber(str:sub(1, pos - 1))
-			y = tonumber(str:sub(pos + 1))	
+			y = tonumber(str:sub(pos + 1))
 			if x and y then
 				command = "move"
 			end
 		end
 		if not command then
-			print("INCORRECT INPUT. Two digital value separated by '/' or command 'exit' expected.")
+			print("INCORRECT INPUT. Two digital value separated by '/' for corinates OR letter 'e' for exit expected.")
 		end
 	until command
 	return command, x, y
