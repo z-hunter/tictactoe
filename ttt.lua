@@ -30,7 +30,7 @@ Game = {
 			O = getOptions({
 				[1] = { nam = "Player#1 (0=Human, 1=AI)", curval = Player1.controller, minval = 0, maxval = 1 },
 				[2] = { nam = "Player#2 (0=Human, 1=AI)", curval = Player2.controller, minval = 0, maxval = 1 },
-				[3] = { nam = "Map size", curval = Game.mapSize, minval = 3, maxval = 100 },
+				[3] = { nam = "Map size", curval = 3, minval = 3, maxval = 100 },
 				[4] = { nam = "Min. line (0=Same as Map size)", curval = 0, minval = 0, maxval = 100 },
 				[5] = {
 					nam = "Game ending (0=first line made, 1=no free cells left)",
@@ -74,6 +74,8 @@ Game = {
 			else
 				error("Unknown controller type.")
 			end
+
+			Map:getHitMovesList(S.CurrentPlayer.token, 1)
 
 			print(S.CurrentPlayer.name .. " turn.")
 			repeat -- stay with the player until they makes the correct move

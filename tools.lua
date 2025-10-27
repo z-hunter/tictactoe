@@ -51,7 +51,7 @@ function inputCommand() --> [command,] x, y
 			command = str
 		elseif pos then
 			x = tonumber(str:sub(1, pos - 1))
-			y = tonumber(str:sub(pos + 1))	
+			y = tonumber(str:sub(pos + 1))
 			if x and y then
 				command = "move"
 			end
@@ -77,35 +77,43 @@ function inputNumber(txt)
 	return ret
 end
 
+function table.serialize(T, indent)    --> string with Lua code of given table: { <code> }
+	indent = indent or 1
+	local iStr = string.rep("  ", indent) -- отступ для форматирования вывода
+	local iStr1 = string.rep("  ", indent - 1)
+	local ret = "{\n"
+	for key, value in pairs(T) do
+		local keyString
+		if type(key) == "number" then
+			keyString = "[" .. tostring(key) .. "]"
+		else
+			keyString = tostring(key)
+		end
+		if type(value) == "table" then
+			-- file:write(indent .. keyString .. " = {\n")
+			ret = ret .. iStr .. keyString .. " = "
+			ret = ret .. table.serialize(value, indent + 1) -- recursive proceed nested tables
+			-- file:write(indent .. "},\n")
+			-- ret = ret .. indent .. "},\n"
+		else
+			local valueString = type(value) == "string" and string.format("%q", value) or tostring(value)
+			--file:write(indent .. keyString .. " = " .. valueString .. ",\n")
+			ret = ret .. iStr .. keyString .. " = " .. valueString .. ",\n"
+		end
+	end
+	ret = ret .. iStr1 .. "},\n"
+	return ret
+end
+
 function table.saveToFile(Tbl, filename)
 	local file = io.open(filename, "w") -- открываем файл для записи
 	if not file then
 		return false, "Cannot open file " .. filename .. " to write!"
 	end
 
-	local function serializeTable(t, indent)
-		indent = indent or "" -- отступ для форматирования вывода
-		for key, value in pairs(t) do
-			local keyString
-			if type(key) == "number" then
-				keyString = "[" .. tostring(key) .. "]"
-			else
-				keyString = tostring(key)
-			end
-			if type(value) == "table" then
-				file:write(indent .. keyString .. " = {\n")
-				serializeTable(value, indent .. "  ") -- рекурсивно обрабатываем вложенные таблицы
-				file:write(indent .. "},\n")
-			else
-				local valueString = type(value) == "string" and string.format("%q", value) or tostring(value)
-				file:write(indent .. keyString .. " = " .. valueString .. ",\n")
-			end
-		end
-	end
-
-	file:write("{\n")
-	serializeTable(Tbl, "  ") -- запускаем сериализацию с начальным отступом
-	file:write("}\n")
+	--file:write("{\n")
+	file:write(table.serialize(Tbl)) --
+	--file:write("}\n")
 	file:close()
 	return true
 end
@@ -130,7 +138,7 @@ function table.loadFromFile(filename)
 
 	if major > 5 or (major == 5 and minor >= 2) then -- для Lua 5.2 и выше используем load
 		func, err = load(luaCode)
-	else -- для 5.1 и ниже используем loadstring
+	else                                            -- для 5.1 и ниже используем loadstring
 		func, err = loadstring(luaCode)
 	end
 
@@ -186,7 +194,7 @@ function getOptions(O) -- O = { n.{nam,curval,minval,maxval}, .. }
 
 		repeat
 			val =
-				inputNumber("Current value is " .. O[opt].curval .. ". Enter new value or just [Enter] to keep current")
+					inputNumber("Current value is " .. O[opt].curval .. ". Enter new value or just [Enter] to keep current")
 		until isNoErr(val, O[opt].minval, O[opt].maxval)
 
 		if val ~= "" then

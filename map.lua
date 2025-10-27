@@ -1,13 +1,13 @@
 Map = {
 	NewLines = { -- list of all cells, turned into lines on previous move. Used for highlihting in .draw()
-		key = function(x, y)
+		toKey = function(x, y)
 			return tostring(x) .. tostring(y)
 		end,
 		add = function(S, x, y)
-			S.List[S.key(x, y)] = { x, y }
+			S.List[S.toKey(x, y)] = { x, y }
 		end,
 		find = function(S, x, y)
-			return S.List[S.key(x, y)]
+			return S.List[S.toKey(x, y)]
 		end,
 		clear = function(S)
 			S.List = {}
@@ -17,8 +17,7 @@ Map = {
 	--
 	clear = function(S)
 		table.clearIndexed(S)
-	end,
-	--
+	end,                    --
 	init = function(S, size) --> void
 		S.NewLines:clear()
 		S.LastMove = {}
@@ -29,7 +28,7 @@ Map = {
 	end,
 
 	--
-	draw = function(S) --> void
+	draw = function(S)                   --> void
 		for y = #S, 1, -1 do
 			io.write(string.format("%2u· ", y)) -- map Y-labels
 			for x = 1, #S do
@@ -145,11 +144,11 @@ Map = {
 		end
 
 		--------->
-		if S:isOutOfRange(x, y) then
+		if S:isOutOfRange(x, y) then -- check for bad moves
 			return nil, "coordinates is out of range"
 		elseif S[x][y] ~= 0 then
 			return nil, "cell is not empty"
-		end -- check for bad moves
+		end
 
 		S.LastMove = { x, y }
 		S[x][y] = p -- place token on Map
@@ -185,29 +184,23 @@ Map = {
 	end,
 	--
 
-	getHitMovesList = function(S, p, deep) --> array of {x,y,h} with val is hits score
-		local function invertP(p) --> p (Map token) of another player
-			if p == 1 then
-				p = 2
-			else
-				p = 1
-			end
-			return p == 1 and 2 or 1 
+	getHitMovesList = function(S, p, deep) --> H_pl, H_opp : arrays of {x,y,h} with val is hits score for player and opponent
+		local function invertP(p)           --> p (Map token) of another player
+			return p == 1 and 2 or 1
 		end
 
-		local H, h = {}, nil
+		local H_pl, H_opp, h = {}, {}, nil
 		local L = S:getCellsList(0) -- list of free cells
 		for _, V in pairs(L) do
 			local TempMap = createNew(S)
-			TempMap.NewLines:add(V[1], V[2])
-			TempMap:draw()
 			h = TempMap:makeMove(p, V[1], V[2])
+			TempMap:draw()
 			if h > 0 then
-				table.insert(H, { V[1], V[2], h })
+				table.insert(H_pl, { V[1], V[2], h })
 				print(V[1], V[2], h)
 			end
 		end
-		return H
+		return H_pl, H_opp
 	end,
 
 	--
