@@ -66,6 +66,7 @@ Game = {
 		local curController, command, x, y, result
 
 		Map:draw()
+
 		repeat
 			if S.CurrentPlayer.controller == 0 then
 				curController = ControllerHuman
@@ -78,6 +79,7 @@ Game = {
 			Map:getHitMovesList(S.CurrentPlayer.token, 1)
 
 			print(S.CurrentPlayer.name .. " turn.")
+			--
 			repeat -- stay with the player until they makes the correct move
 				command, x, y = curController.retMove()
 
@@ -113,17 +115,8 @@ Game = {
 
 			S.CurrentPlayer = S.CurrentPlayer == Player1 and Player2 or Player1 -- switch next player
 
-			-- local R = Map:getHitMovesList(Game.CurrentPlayer.token, 3)
-			--[[print("__",Game.CurrentPlayer.token)
-			for k, V in pairs(R) do
-				table.dump(V)
-			end]]
-			--until table.maxkey(R)==nil
-
-			local theEnd
-			if S.endCondition == 1 then
-				theEnd = (#(Map:getCellsList(0)) == 0)
-			else
+			local theEnd = (#(Map:getCellsList(0)) == 0)
+			if S.endCondition == 0 then
 				theEnd = (result > 0)
 			end
 		until theEnd
@@ -146,8 +139,8 @@ if Game.endCondition == 1 and (Game.minLine == Game.mapSize) then
 	print(string.format("Warning: line size %d does't make much sense in this configuration", Game.minLine))
 end
 
-Map[2][1] = 1
-Map[2][3] = 1
+--Map[2][1] = 1
+--Map[2][3] = 1
 
 Game:play()
 
