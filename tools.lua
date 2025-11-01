@@ -1,3 +1,8 @@
+-- unpack: global in Lua 3.1-5.1, table.unpack in Lua 5.2+
+if not table.unpack then
+	table.unpack = _G["unpack"]  -- Lua 3.1-5.1
+end
+
 function table.deepcopy(o, seen) --> recursively copies a table's contents, ensures that metatables are preserved
 	-- Handle non-tables and previously-seen tables. |SRC: https://gist.github.com/tylerneylon/81333721109155b2d244#file-copy-lua-L84
 	if type(o) ~= "table" then
@@ -77,9 +82,9 @@ function inputNumber(txt)
 	return ret
 end
 
-function table.serialize(T, indent)    --> string with Lua code of given table: { <code> }
+function table.retSerialized(T, indent)    --> string with Lua code of given table: { <code> }
 	indent = indent or 1
-	local iStr = string.rep("  ", indent) -- отступ для форматирования вывода
+	local iStr = string.rep("  ", indent) -- indent for formatting output
 	local iStr1 = string.rep("  ", indent - 1)
 	local ret = "{\n"
 	for key, value in pairs(T) do
@@ -92,7 +97,7 @@ function table.serialize(T, indent)    --> string with Lua code of given table: 
 		if type(value) == "table" then
 			-- file:write(indent .. keyString .. " = {\n")
 			ret = ret .. iStr .. keyString .. " = "
-			ret = ret .. table.serialize(value, indent + 1) -- recursive proceed nested tables
+			ret = ret .. table.retSerialized(value, indent + 1) -- recursive proceed nested tables
 			-- file:write(indent .. "},\n")
 			-- ret = ret .. indent .. "},\n"
 		else
@@ -105,40 +110,40 @@ function table.serialize(T, indent)    --> string with Lua code of given table: 
 	return ret
 end
 
-function table.saveToFile(Tbl, filename)
-	local file = io.open(filename, "w") -- открываем файл для записи
+function table.saveToFile(T, filename)	--> true/false, error message: Save serialized table to file
+	local file = io.open(filename, "w") -- trying to open file for writing
 	if not file then
 		return false, "Cannot open file " .. filename .. " to write!"
 	end
 
 	--file:write("{\n")
-	file:write(table.serialize(Tbl)) --
+	file:write(table.retSerialized(T)) --
 	--file:write("}\n")
 	file:close()
 	return true
 end
 
-function table.loadFromFile(filename)
+function table.retLoadedFromFile(filename)	--> table or nil, error message: Load serialized table and return it
 	local file = io.open(filename, "r")
 
 	if not file then
 		return nil, "Cannot open file " .. filename .. " for read!"
 	end
 
-	local content = file:read("*all") -- читаем всё содержимое файла
+	local content = file:read("*all") -- read all file content
 	file:close()
 
-	-- Добавляем обёртку "return" к содержимому таблицы
+	-- add "return" wrapper to table content
 	local luaCode = "return " .. content
 
-	-- Компилируем и выполняем этот код
+	-- compile and execute this code
 	local func, err
 	local major, minor = _VERSION:match("Lua (%d+)%.(%d+)")
 	major, minor = tonumber(major), tonumber(minor)
 
-	if major > 5 or (major == 5 and minor >= 2) then -- для Lua 5.2 и выше используем load
+	if major > 5 or (major == 5 and minor >= 2) then -- for Lua 5.2 and greater use load
 		func, err = load(luaCode)
-	else                                            -- для 5.1 и ниже используем loadstring
+	else                                            -- for Lua 5.1 and lower use loadstring
 		func, err = loadstring(luaCode)
 	end
 
@@ -156,7 +161,9 @@ function table.loadFromFile(filename)
 end
 
 function getOptions(O) -- O = { n.{nam,curval,minval,maxval}, .. }
-	local function isNoErr(v, vmin, vmax)
+	local filename = "options~"	
+
+	function isNoErr(v, vmin, vmax)
 		--print(v,vmin,vmax)
 		if v == "" then
 			return true
@@ -166,15 +173,10 @@ function getOptions(O) -- O = { n.{nam,curval,minval,maxval}, .. }
 			return true
 		end
 	end
-
-	local filename = "options~"
-	local O2, err = table.loadFromFile(filename)
-	if O2 then
-		-- print("Options loaded from file")
-		O = O2
-	else
-		-- print ("Options not loaded from file " .. err)
-	end
+	
+	--local O2 = table.loadFromFile(filename)
+	--O = O2 or O
+	O = table.retLoadedFromFile(filename) or O
 
 	while true do
 		for k, V in ipairs(O) do
@@ -204,13 +206,13 @@ function getOptions(O) -- O = { n.{nam,curval,minval,maxval}, .. }
 	end
 end
 
-function table.maxkey(T)
+--[[ function table.maxkey(T)
 	local inv = {}
 	for k, _ in pairs(T) do
 		table.insert(inv, k)
 	end
 	if #inv > 1 then
-		m = math.max(unpack(inv))
+		m = math.max(table.unpack(inv))
 	else
 		m = inv[1]
 	end
@@ -223,12 +225,12 @@ function table.minkey(T)
 		table.insert(inv, k)
 	end
 	if #inv > 1 then
-		m = math.min(unpack(inv))
+		m = math.min(table.unpack(inv))
 	else
 		m = inv[1]
 	end
 	return m
-end
+end ]]
 
 function table.dump(T)
 	for k, v in pairs(T) do
@@ -236,10 +238,6 @@ function table.dump(T)
 	end
 end
 
-function table.dumpRet(T)
-	for k, v in pairs(T) do
-		io.write(
-			"h1=" .. v[1] .. " h2=" .. v[2] .. "  x" .. v[3] .. " y" .. v[4] .. "  deep=" .. v[5] .. "," .. v[6] .. "\n"
-		)
-	end
-end
+
+
+
